@@ -342,7 +342,7 @@ productos.forEach(function(producto) {
     lista.innerHTML += `
         <div class="product" data-category="${producto.category}">
           
-<img src="${producto.imagen}" alt="${producto.name}">
+<img src="${producto.imagen}" alt="${producto.name}" style="width:100%; height:220px; object-fit:contain;">
             <div class="product-info">
                 <h3>${producto.nombre}</h3>
 
