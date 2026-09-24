@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>D&O Studio</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        header {
+            background: #111;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 {
+            font-size: 32px;
+            letter-spacing: 3px;
+        }
+
+        header p {
+            margin-top: 8px;
+            color: #ccc;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .search {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 25px;
+        }
+
+        .category {
+            background: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .product {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        .product img {
+            width: 100%;
+            height: 230px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 15px;
+        }
+
+        .product h3 {
+            margin-bottom: 8px;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .cup {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background: #111;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        .form-section {
+            background: white;
+            margin-top: 40px;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .form-section h2 {
+            margin-bottom: 20px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 100px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #777;
+        }
+      .foto-container {
+    position: relative;
+}
+
+.foto-container img {
+    display: block;
+    width: 100%;
+}
+
+.foto-container button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 48px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.foto-container button:first-of-type {
+    left: 10px;
+}
+
+.foto-container button:last-of-type {
+    right: 10px;
+}  
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>D&O STUDIO</h1>
+    <p>Catálogo online</p>
+</header>
+
+<div class="container">
+
+    <input
+    id="buscador"
+        type="text"
+        class="search"
+        placeholder="🔎 ¿Qué estás buscando?"
+    >
+
+    <div class="categories">
+        <button class="category" data-filter="Todos">Todos</button>
+       <button class="category" data-filter="Ropa">Ropa</button>
+        <button class="category" data-filter="Zapatos">Zapatos</button>
+       <button class="category" data-filter="Motos">Motos</button>
+      <button class="category" data-filter="Hogar">Hogar</button>
+       <button class="category" data-filter="Electrodomésticos">Electrodomésticos</button>
+    </div>
+
+    <div class="products" id="products"></div>
+    </div>
+
+    <div class="form-section">
+
+        <h2>Solicita tu producto</h2>
+
+       <form id="formSolicitud">
+
+            <input
+            id="nombreCliente"
+                type="text"
+                placeholder="Nombre completo"
+                required
+            >
+
+            <input
+                id="telefonoCliente"
+                type="text"
+                placeholder="Teléfono / WhatsApp"
+                required
+            >
+
+            <input
+            id="provinciaCliente"
+                type="text"
+                placeholder="Provincia"
+                required
+            >
+
+            <input
+            id="municipioCliente"
+                type="text"
+                placeholder="Municipio"
+                required
+            >
+
+            <textarea
+            id="productoSolicitado"
+                placeholder="¿Qué producto estás buscando?"
+            ></textarea>
+
+            <button class="button" type="submit">
+                Enviar solicitud
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<footer>
+    © 2026 D&O Studio
+</footer>
+<script>
+     const SUPABASE_URL = "https://xmcdenugtqqucbeocclx.supabase.co";
+const SUPABASE_KEY="sb_publishable_Bd2gvA3mg2coXPx0F-0LEQ_RB3gZy2B";
+const supabaseHeaders = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": "Bearer " + SUPABASE_KEY
+};
+    async function cargarProductos() {
+const respuesta = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, {
+    headers: supabaseHeaders
+});
+
+const productosGuardados = await respuesta.json();
+
+const productsContainer =
+    document.getElementById("products");
+
+productosGuardados.forEach(producto => {
+    productsContainer.innerHTML += `
+        <div class="product" data-category="${producto.category}">
+         <div class="foto-container">  
+            <img
+    id="imagen-${producto.id}"
+   src="${producto.imagen}"
+    alt="${producto.name}">
+  ${producto.images && producto.images.length > 1 ? `
+    <button onclick="cambiarFoto(${producto.id}, -1)">‹</button>
+    <button onclick="cambiarFoto(${producto.id}, 1)">›</button>
+` : ""}
+</div>
+
+            <div class="product-info">
+                <h3>${producto.nombre}</h3>
+
+                <div class="price">
+                 $${producto.precio_usd} USD   
+                </div>
+
+                <div class="cup">
+                    ${Number(producto.precio_cup).toLocaleString()} CUP
+                </div>
+
+                <p>${producto.description || ""}</p>
+                ${producto.disponible ? "🟢 DISPONIBLE" : "🔴 AGOTADO"}
+
+            <button
+    class="button"
+    onclick="solicitarProducto('${producto.nombre}')">
+    ${producto.disponible ? "Solicitar producto" : "Encargar producto"}
+</button>   
+            </div>
+        </div>
+    `;
+});
+}
+
+cargarProductos();
+function cambiarFoto(id, direccion) {
+    const producto = productosGuardados.find(p => p.id === id);
+
+    if (!producto || !producto.images || producto.images.length <= 1) {
+        return;
+    }
+
+    const imagen = document.getElementById("imagen-" + id);
+
+    let posicion = producto.images.indexOf(imagen.src);
+
+    if (posicion === -1) {
+        posicion = 0;
+    }
+
+    posicion =
+        (posicion + direccion + producto.images.length)
+        % producto.images.length;
+
+    imagen.src = producto.images[posicion];
+}
+function solicitarProducto(nombre) {
+    const campoProducto = document.getElementById("productoSolicitado");
+
+    if (campoProducto) {
+        campoProducto.value = nombre;
+        campoProducto.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+        campoProducto.focus();
+    }
+}
+
+document.getElementById("formSolicitud").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const nombre = document.getElementById("nombreCliente").value;
+    const telefono = document.getElementById("telefonoCliente").value;
+    const provincia = document.getElementById("provinciaCliente").value;
+    const municipio = document.getElementById("municipioCliente").value;
+    const producto = document.getElementById("productoSolicitado").value;
+
+    const mensaje =
+`Hola D&O Studio.
+
+Quiero solicitar este producto:
+
+Producto: ${producto}
+Nombre: ${nombre}
+Teléfono/WhatsApp: ${telefono}
+Provincia: ${provincia}
+Municipio: ${municipio}`;
+
+    const numeroWhatsApp = "16027518470";
+
+    window.open(
+        `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`,
+        "_blank"
+    );
+});
+const buscador = document.getElementById("buscador");
+
+buscador.addEventListener("input", function() {
+const texto = buscador.value.toLowerCase();
+const productos = document.querySelectorAll(".product");
+productos.forEach(function(producto) {
+    const contenido = producto.textContent.toLowerCase();
+   producto.style.display = contenido.includes(texto) ? "" : "none"; 
+});
+});
+const botonesCategorias = document.querySelectorAll(".category");
+botonesCategorias.forEach(function(boton) {
+    boton.addEventListener("click", function() {
+const filtro = this.getAttribute("data-filter");
+const productos = document.querySelectorAll(".product");
+productos.forEach(function(producto) {
+const categoriaProducto = producto.getAttribute("data-category");
+if (filtro === "Todos" || categoriaProducto === filtro) {
+    producto.style.display = "";
+} else {
+    producto.style.display = "none";
+}
+});
+    });
+});
+</script>
+</body>
+</html>

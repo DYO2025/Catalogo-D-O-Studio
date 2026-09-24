@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>D&O Studio - Administración</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+
+        .panel {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input,
+        textarea,
+        select {
+
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 12px;
+
+            border: 1px solid #ddd;
+            border-radius: 8px;
+
+            font-size: 16px;
+        }
+
+        button {
+
+            width: 100%;
+            padding: 14px;
+
+            background: #111;
+            color: white;
+
+            border: none;
+            border-radius: 8px;
+
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+   <div id="loginAdmin">
+    <h2>Administrador D&O Studio</h2>
+
+    <input type="email" id="emailAdmin" placeholder="Correo">
+
+    <input type="password" id="passwordAdmin" placeholder="Contraseña">
+
+    <button type="button" onclick="iniciarSesion()">
+        INICIAR SESIÓN
+    </button>
+</div> 
+<div class="panel" id="panelAdmin" style="display:none;">
+
+    <h1>D&O Studio</h1>
+
+    <h2>Agregar producto</h2>
+
+    <input
+    type="text"
+    id="nombre"
+    placeholder="Nombre del producto"
+>
+   
+
+    <select id="categoria">
+
+        <option>Ropa</option>
+        <option>Zapatos</option>
+        <option>Motos</option>
+        <option>Hogar</option>
+        <option>Electrodomésticos</option>
+
+    </select>
+
+    <input
+    type="number"
+    id="precioUSD"
+    placeholder="Precio USD"
+
+    >
+
+    <input
+    type="number"
+    id="precioCUP"
+    placeholder="Precio CUP"
+>
+
+   <textarea
+    id="descripcion"
+    placeholder="Descripción del producto">
+</textarea>
+
+<input
+    type="file"
+    id="foto"
+    accept="image/*"
+    multiple
+>
+
+<button type="button" onclick="guardarProducto()">
+    PUBLICAR PRODUCTO
+</button>
+
+
+
+<script>
+   const SUPABASE_URL = "https://xmcdenugtqqucbeocclx.supabase.co";
+const SUPABASE_KEY="sb_publishable_Bd2gvA3mg2coXPx0F-0LEQ_RB3gZy2B";
+const supabaseHeaders = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": "Bearer " + SUPABASE_KEY
+};
+function obtenerHeadersAdmin() {
+  const token = localStorage.getItem("adminToken");  
+  return {
+    ...supabaseHeaders,
+    "Authorization": "Bearer " + token
+  };
+}
+async function iniciarSesion() {
+    const email = document.getElementById("emailAdmin").value.trim();
+    const password = document.getElementById("passwordAdmin").value;
+
+    const respuesta = await fetch(
+        `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        {
+            method: "POST",
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        }
+    );
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+        alert("Correo o contraseña incorrectos");
+        return;
+    }
+
+    localStorage.setItem("adminToken", datos.access_token);
+    alert("Inicio de sesión correcto");
+    document.getElementById("loginAdmin").style.display = "none";
+document.getElementById("panelAdmin").style.display = "block";
+mostrarProductosAdmin();
+}
+async function verificarSesion() {
+    const tokenGuardado = localStorage.getItem("adminToken");
+
+    if (!tokenGuardado) return;
+
+    const respuesta = await fetch(
+        `${SUPABASE_URL}/auth/v1/user`,
+        {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": "Bearer " + tokenGuardado
+            }
+        }
+    );
+
+    if (!respuesta.ok) {
+        localStorage.removeItem("adminToken");
+        return;
+    }
+
+    document.getElementById("loginAdmin").style.display = "none";
+    document.getElementById("panelAdmin").style.display = "block";
+    mostrarProductosAdmin();
+}
+
+verificarSesion();
+async function subirFotoSupabase(archivo) {
+    const nombreArchivo = Date.now() + "-" + archivo.name.replace(/\s+/g, "-");
+
+    const respuesta = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/Productos/${nombreArchivo}`,
+        {
+            method: "POST",
+            headers: {
+             ...obtenerHeadersAdmin(),  
+                "Content-Type": archivo.type
+            },
+            body: archivo
+        }
+    );
+
+  if (!respuesta.ok) {
+    const errorSupabase = await respuesta.text();
+    console.error("ERROR SUPABASE:", errorSupabase);
+    throw new Error("No se pudo subir la foto");
+}  
+
+    return `${SUPABASE_URL}/storage/v1/object/public/Productos/${nombreArchivo}`;
+}
+async function guardarProducto() {
+
+    const nombre = document.getElementById("nombre").value;
+    const categoria = document.getElementById("categoria").value;
+    const precioUSD = document.getElementById("precioUSD").value;
+    const precioCUP = document.getElementById("precioCUP").value;
+    const descripcion = document.getElementById("descripcion").value;
+  const fotos = document.getElementById("foto").files;
+  if (fotos.length === 0) {
+    alert("Selecciona una foto del producto.");
+    return;
+}
+const urlFoto = await subirFotoSupabase(fotos[0]);
+console.log("Foto subida:", urlFoto);
+const lector = new FileReader();
+const imagenes = [];
+    if (
+        nombre === "" ||
+        precioUSD === "" ||
+        precioCUP === ""
+    ) {
+        alert("Por favor completa el nombre y los precios.");
+        return;
+    }
+
+    async function publicarProducto() {
+     
+    const producto = {
+
+        id: Date.now(),
+
+        name: nombre,
+
+        category: categoria,
+
+        priceUSD: Number(precioUSD),
+
+        priceCUP: Number(precioCUP),
+
+        description: descripcion,
+
+     image: urlFoto,
+images: imagenes
+
+    };
+const respuestaProducto = await fetch(`${SUPABASE_URL}/rest/v1/productos`, {
+    method: "POST",
+    headers: {
+      ...obtenerHeadersAdmin(),  
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+    },
+    body: JSON.stringify({
+        nombre: nombre,
+        categoria: categoria,
+        precio_usd: Number(precioUSD),
+        precio_cup: Number(precioCUP),
+        descripcion: descripcion,
+        imagen: urlFoto,
+      disponible: true
+    })
+});
+console.log("RESPUESTA PRODUCTO:", await respuestaProducto.text());
+    let productos =
+        JSON.parse(localStorage.getItem("productos")) || [];
+
+    productos.push(producto);
+
+    localStorage.setItem(
+        "productos",
+        JSON.stringify(productos)
+    );
+
+    alert("Producto publicado correctamente.");
+
+    document.getElementById("nombre").value = "";
+    document.getElementById("precioUSD").value = "";
+    document.getElementById("precioCUP").value = "";
+    document.getElementById("descripcion").value = "";
+    document.getElementById("foto").value = "";
+
+       }
+publicarProducto();
+return;
+
+
+    const lectorFoto = new FileReader();
+
+   lectorFoto.onload = function() {
+    imagenes.push(lectorFoto.result);
+
+    if (imagenes.length === fotos.length) {
+        publicarProducto();
+    }
+};
+
+    lectorFoto.readAsDataURL(fotos[i]);
+}                                                               
+
+
+async function mostrarProductosAdmin() {
+const respuesta = await fetch(
+    `${SUPABASE_URL}/rest/v1/productos?select=*`,
+    {
+        headers: supabaseHeaders
+    }
+);
+
+productos = await respuesta.json();
+const lista = document.getElementById("listaProductos");
+
+lista.innerHTML = "";
+
+productos.forEach(function(producto) {
+    lista.innerHTML += `
+        <div class="product" data-category="${producto.category}">
+          
+<img src="${producto.imagen}" alt="${producto.name}">
+            <div class="product-info">
+                <h3>${producto.nombre}</h3>
+
+                <div class="price">
+                    $${producto.precio_usd} USD
+                </div>
+
+                <div class="cup">
+                    ${Number(producto.precio_cup).toLocaleString()} CUP
+                </div>
+
+                <p>${producto.description || ""}</p>
+               ${producto.disponible ? "🟢 DISPONIBLE" : "🔴 AGOTADO"}
+               <button onclick="marcarAgotado(${producto.id})">
+  ${producto.disponible ? "MARCAR AGOTADO" : "MARCAR DISPONIBLE"}
+</button>
+<button onclick="eliminarProducto(${producto.id})">ELIMINAR</button>
+            </div>
+        </div>
+    `;
+});
+
+}
+async function marcarAgotado(id) {
+    const producto = productos.find(p => p.id === id);
+
+    if (!producto) return;
+
+    const nuevoEstado = !producto.disponible;
+
+    const respuesta = await fetch(
+        `${SUPABASE_URL}/rest/v1/productos?id=eq.${id}`,
+        {
+            method: "PATCH",
+            headers: {
+              ...obtenerHeadersAdmin(),  
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+             disponible: nuevoEstado
+
+            })
+        }
+    );
+
+    if (!respuesta.ok) {
+        console.error("Error al cambiar estado:", await respuesta.text());
+        alert("No se pudo cambiar el estado.");
+        return;
+    }
+
+    mostrarProductosAdmin();
+}
+async function eliminarProducto(id) {
+    const producto = productos.find(p => p.id === id);
+    if (!confirm("¿Seguro que quieres eliminar este producto?")) {
+        return;
+    }
+
+    const respuesta = await fetch(
+        `${SUPABASE_URL}/rest/v1/productos?id=eq.${id}`,
+        {
+            method: "DELETE",
+         headers: obtenerHeadersAdmin()
+        }
+    );
+
+    if (!respuesta.ok) {
+        console.error("Error al eliminar:", await respuesta.text());
+        alert("No se pudo eliminar el producto.");
+        return;
+    }
+    if (producto && producto.imagen && producto.imagen.includes("/Productos/")) {
+    const nombreFoto = producto.imagen.split("/").pop();
+
+    const respuestaFoto = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/Productos/${nombreFoto}`,
+        {
+            method: "DELETE",
+           headers: obtenerHeadersAdmin()
+        }
+    );
+  if (!respuestaFoto.ok) {
+    console.error("Error al eliminar foto:", await respuestaFoto.text());
+} else {
+    console.log("Foto eliminada correctamente");
+}  
+}  
+    await mostrarProductosAdmin();
+}
+
+</script>
+<h2>Productos publicados</h2>
+<input
+    type="text"
+    id="buscarAdmin"
+    placeholder="🔎 Buscar producto..."
+><div id="categoriasAdmin">
+    <button data-filter="Todos">Todos</button>
+    <button data-filter="Ropa">Ropa</button>
+    <button data-filter="Zapatos">Zapatos</button>
+    <button data-filter="Motos">Motos</button>
+    <button data-filter="Hogar">Hogar</button>
+    <button data-filter="Electrodomésticos">Electrodomésticos</button>
+</div>
+<div id="listaProductos"></div>
+<script>
+    mostrarProductosAdmin();
+    document.getElementById("buscarAdmin").addEventListener("input", function() {
+    const texto = this.value.toLowerCase();
+    const productos = document.querySelectorAll("#listaProductos .product");
+
+    productos.forEach(function(producto) {
+        const nombre = producto.textContent.toLowerCase();
+        producto.style.display = nombre.includes(texto) ? "" : "none";
+    });
+});
+const botonesAdmin = document.querySelectorAll("#categoriasAdmin button");
+botonesAdmin.forEach(function(boton) {
+    boton.addEventListener("click", function() {
+        const categoria = this.getAttribute("data-filter");
+        console.log("Categoría seleccionada:", categoria);
+        const productos = document.querySelectorAll("#listaProductos .product");
+
+productos.forEach(function(producto) {
+    const categoriaProducto = producto.getAttribute("data-category");
+
+    if (categoria === "Todos" || categoriaProducto === categoria) {
+        producto.style.display = "";
+    } else {
+        producto.style.display = "none";
+    }
+});
+    });
+});
+</script>
+</div>
+</body>
+</html>  
+
+
+
